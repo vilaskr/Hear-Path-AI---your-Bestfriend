@@ -1,12 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { SYSTEM_PROMPTS } from "../constants.tsx";
-import { ChatMode, Message } from "../types.ts";
+import { SYSTEM_PROMPTS } from "../constants";
+import { ChatMode, Message } from "../types";
 
 export class GeminiService {
   private ai: GoogleGenAI;
 
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = (typeof process !== 'undefined' ? process.env.API_KEY : null) || (import.meta as any).env?.VITE_API_KEY;
+    this.ai = new GoogleGenAI({ apiKey: apiKey || '' });
   }
 
   async checkCrisisIntent(userInput: string): Promise<boolean> {

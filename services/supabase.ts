@@ -1,7 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined;
-const supabaseAnonKey = typeof process !== 'undefined' ? process.env.SUPABASE_ANON_KEY : undefined;
+// Support both standard process.env (Vercel) and Vite's import.meta.env
+const supabaseUrl = (typeof process !== 'undefined' ? process.env.SUPABASE_URL : null) || (import.meta as any).env?.VITE_SUPABASE_URL;
+const supabaseAnonKey = (typeof process !== 'undefined' ? process.env.SUPABASE_ANON_KEY : null) || (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey) 
