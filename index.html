@@ -68,7 +68,7 @@
       }
     </style>
     <script>
-      // Global safety polyfill
+      // Global safety polyfill for production environment
       window.process = { env: {} };
     </script>
   <script type="importmap">
@@ -89,6 +89,7 @@
   <body>
     <div class="gradient-mesh"></div>
     <div id="root"></div>
+    <!-- Vite will process this during build -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

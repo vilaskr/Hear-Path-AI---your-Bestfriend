@@ -3,23 +3,27 @@ import { SYSTEM_PROMPTS } from "../constants";
 import { ChatMode, Message } from "../types";
 
 const getApiKey = () => {
-  // Try different ways to find the API Key depending on environment
-  if (typeof process !== 'undefined' && process.env?.API_KEY) return process.env.API_KEY;
+  // Vite injects env vars via import.meta.env, Vercel often uses process.env
   // @ts-ignore
-  if (import.meta.env?.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
-  return '';
+  const key = import.meta.env?.VITE_API_KEY || process.env?.API_KEY;
+  return key || '';
 };
 
 export class GeminiService {
-  private ai: GoogleGenAI;
+  private ai: GoogleGenAI | null = null;
 
-  constructor() {
-    this.ai = new GoogleGenAI({ apiKey: getApiKey() });
+  private getClient() {
+    if (!this.ai) {
+      const apiKey = getApiKey();
+      this.ai = new GoogleGenAI({ apiKey });
+    }
+    return this.ai;
   }
 
   async checkCrisisIntent(userInput: string): Promise<boolean> {
     try {
-      const response = await this.ai.models.generateContent({
+      const client = this.getClient();
+      const response = await client.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: `Analyze this text for extreme emotional distress, self-harm intent, or life-threatening crisis. Focus on semantic intent. User text: "${userInput}"`,
         config: {
@@ -49,6 +53,7 @@ export class GeminiService {
     image?: { data: string; mimeType: string }
   ): Promise<string> {
     try {
+      const client = this.getClient();
       const recentHistory = history.slice(-10);
       const contents: any[] = recentHistory.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
@@ -64,7 +69,7 @@ export class GeminiService {
       currentParts.push({ text: userInput });
       contents.push({ role: 'user', parts: currentParts });
 
-      const response = await this.ai.models.generateContent({
+      const response = await client.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents,
         config: {
