@@ -1,0 +1,8 @@
+{
+  "name": "HeartPath AI - Your Companion & Guide",
+  "description": "A safe, emotionally supportive AI companion designed to be a best friend and supportive parent figure. Features chat modes for study, mental health, and casual talk, plus mood tracking and journaling.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
