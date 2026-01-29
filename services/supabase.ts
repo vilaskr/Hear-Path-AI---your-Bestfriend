@@ -1,13 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Support both standard process.env (Vercel) and Vite's import.meta.env
-const supabaseUrl = (typeof process !== 'undefined' ? process.env.SUPABASE_URL : null) || (import.meta as any).env?.VITE_SUPABASE_URL;
-const supabaseAnonKey = (typeof process !== 'undefined' ? process.env.SUPABASE_ANON_KEY : null) || (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
+// Safe access to environment variables across different build environments
+const getEnv = (key: string) => {
+  if (typeof process !== 'undefined' && process.env && process.env[key]) return process.env[key];
+  // @ts-ignore
+  if (import.meta.env && import.meta.env[`VITE_${key}`]) return import.meta.env[`VITE_${key}`];
+  return null;
+};
+
+const supabaseUrl = getEnv('SUPABASE_URL');
+const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY');
 
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey) 
   : null;
 
 if (!supabase) {
-  console.warn("HeartPath: Supabase credentials missing. The app is running in Local Storage mode.");
+  console.warn("HeartPath: Supabase credentials missing or invalid. App is in Local Storage mode.");
 }

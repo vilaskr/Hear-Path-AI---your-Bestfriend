@@ -2,11 +2,19 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_PROMPTS } from "../constants";
 import { ChatMode, Message } from "../types";
 
+const getEnv = (key: string) => {
+  if (typeof process !== 'undefined' && process.env && process.env[key]) return process.env[key];
+  // @ts-ignore
+  if (import.meta.env && import.meta.env[`VITE_${key}`]) return import.meta.env[`VITE_${key}`];
+  return null;
+};
+
 export class GeminiService {
   private ai: GoogleGenAI;
 
   constructor() {
-    const apiKey = (typeof process !== 'undefined' ? process.env.API_KEY : null) || (import.meta as any).env?.VITE_API_KEY;
+    const apiKey = getEnv('API_KEY');
+    // Ensure we always have an instance, even if the key is missing initially
     this.ai = new GoogleGenAI({ apiKey: apiKey || '' });
   }
 
@@ -14,19 +22,14 @@ export class GeminiService {
     try {
       const response = await this.ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Analyze this text for extreme emotional distress, self-harm intent, or life-threatening crisis. 
-        Focus on semantic intent, underlying tone, and risk level.
-        User text: "${userInput}"`,
+        contents: `Analyze this text for extreme emotional distress, self-harm intent, or life-threatening crisis. Focus on semantic intent. User text: "${userInput}"`,
         config: {
           thinkingConfig: { thinkingBudget: 2000 },
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              isCrisis: { 
-                type: Type.BOOLEAN, 
-                description: "True if user shows high risk of harm, extreme despair, or active crisis" 
-              }
+              isCrisis: { type: Type.BOOLEAN }
             },
             required: ["isCrisis"]
           }
@@ -57,12 +60,9 @@ export class GeminiService {
 
       const currentParts: any[] = [];
       if (image) {
-        currentParts.push({
-          inlineData: { data: image.data, mimeType: image.mimeType },
-        });
+        currentParts.push({ inlineData: { data: image.data, mimeType: image.mimeType } });
       }
       currentParts.push({ text: userInput });
-
       contents.push({ role: 'user', parts: currentParts });
 
       const response = await this.ai.models.generateContent({
@@ -71,15 +71,13 @@ export class GeminiService {
         config: {
           systemInstruction: SYSTEM_PROMPTS[mode],
           temperature: mode === ChatMode.CRISIS ? 0.1 : 0.8,
-          topP: 0.9,
-          topK: 32,
         },
       });
 
-      return response.text || (mode === ChatMode.CRISIS ? "I'm right here with you." : "I'm listening.");
+      return response.text || "I'm here.";
     } catch (error) {
-      console.error("Gemini Pro API Error:", error);
-      return mode === ChatMode.CRISIS ? "Stay with me. I am here." : "I had a moment of silence. I'm back now. What's on your mind?";
+      console.error("Gemini API Error:", error);
+      return "I'm having a little trouble connecting right now, but I'm still here with you.";
     }
   }
 }
