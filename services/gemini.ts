@@ -1,19 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { SYSTEM_PROMPTS } from "../constants";
-import { ChatMode, Message } from "../types";
+import { SYSTEM_PROMPTS } from "../constants.tsx";
+import { ChatMode, Message } from "../types.ts";
 
 export class GeminiService {
   private ai: GoogleGenAI;
 
   constructor() {
-    // Fix: Initialize GoogleGenAI with API_KEY directly from environment as required by guidelines
     this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
-  /**
-   * Performs deep semantic analysis on user input to detect emotional distress.
-   * Uses Gemini 3 Pro with a thinking budget to ensure high-accuracy safety monitoring.
-   */
   async checkCrisisIntent(userInput: string): Promise<boolean> {
     try {
       const response = await this.ai.models.generateContent({
@@ -36,7 +31,6 @@ export class GeminiService {
           }
         }
       });
-      // Fix: Access .text property directly instead of calling it as a method
       const result = JSON.parse(response.text || '{"isCrisis": false}');
       return result.isCrisis;
     } catch (e) {
@@ -45,9 +39,6 @@ export class GeminiService {
     }
   }
 
-  /**
-   * Generates empathetic, context-aware responses using Gemini 3 Pro.
-   */
   async generateResponse(
     mode: ChatMode,
     history: Message[],
@@ -55,7 +46,6 @@ export class GeminiService {
     image?: { data: string; mimeType: string }
   ): Promise<string> {
     try {
-      // Limit history for context window optimization while maintaining relationship depth
       const recentHistory = history.slice(-10);
       const contents: any[] = recentHistory.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
@@ -85,7 +75,6 @@ export class GeminiService {
         },
       });
 
-      // Fix: Access .text property directly
       return response.text || (mode === ChatMode.CRISIS ? "I'm right here with you." : "I'm listening.");
     } catch (error) {
       console.error("Gemini Pro API Error:", error);

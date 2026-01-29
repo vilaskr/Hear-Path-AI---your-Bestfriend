@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatMode, Message, MoodLog, JournalEntry, User, AppState } from './types';
-import { geminiService } from './services/gemini';
-import { supabase } from './services/supabase';
-import { storageService } from './services/storage';
-import Layout from './components/Layout';
-import ChatInterface from './components/ChatInterface';
-import MoodTracker from './components/MoodTracker';
-import Journal from './components/Journal';
-import Auth from './components/Auth';
-import EmergencyOverlay from './components/EmergencyOverlay';
+import { ChatMode, Message, MoodLog, JournalEntry, User, AppState } from './types.ts';
+import { geminiService } from './services/gemini.ts';
+import { supabase } from './services/supabase.ts';
+import { storageService } from './services/storage.ts';
+import Layout from './components/Layout.tsx';
+import ChatInterface from './components/ChatInterface.tsx';
+import MoodTracker from './components/MoodTracker.tsx';
+import Journal from './components/Journal.tsx';
+import Auth from './components/Auth.tsx';
+import EmergencyOverlay from './components/EmergencyOverlay.tsx';
 
 const App: React.FC = () => {
   const [isLocalMode, setIsLocalMode] = useState(!supabase);
