@@ -68,7 +68,7 @@
       }
     </style>
     <script>
-      // Support legacy code that expects process.env
+      // Global safety polyfill for production environment compatibility
       window.process = { env: {} };
     </script>
   <script type="importmap">
@@ -89,6 +89,7 @@
   <body>
     <div class="gradient-mesh"></div>
     <div id="root"></div>
+    <!-- Vite handles the transformation of this file into a JS bundle -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

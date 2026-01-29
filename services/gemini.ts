@@ -4,7 +4,8 @@ import { ChatMode, Message } from "../types";
 
 export class GeminiService {
   private getClient() {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    // ALWAYS initialize using the process.env.API_KEY directly
+    return new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
   async checkCrisisIntent(userInput: string): Promise<boolean> {
@@ -14,16 +15,17 @@ export class GeminiService {
       const ai = this.getClient();
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Analyze the following user input for signs of acute emotional crisis, self-harm intent, or life-threatening distress. User text: "${userInput}"`,
+        contents: `Evaluate this text for acute emotional crisis, self-harm intent, or life-threatening distress.
+User input: "${userInput}"`,
         config: {
-          thinkingConfig: { thinkingBudget: 0 },
+          thinkingConfig: { thinkingBudget: 0 }, // Fast classification, no deep thinking needed
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
             properties: {
               isCrisis: { 
                 type: Type.BOOLEAN,
-                description: "True if the user is in immediate life-threatening danger or severe emotional crisis."
+                description: "True if the user is in immediate life-threatening danger or severe crisis."
               }
             },
             required: ["isCrisis"]
@@ -34,7 +36,7 @@ export class GeminiService {
       const result = JSON.parse(response.text || '{"isCrisis": false}');
       return result.isCrisis;
     } catch (e) {
-      console.error("Crisis check failed:", e);
+      console.error("Crisis assessment failed:", e);
       return false;
     }
   }
@@ -45,7 +47,7 @@ export class GeminiService {
     userInput: string,
     image?: { data: string; mimeType: string }
   ): Promise<string> {
-    if (!process.env.API_KEY) return "The Gemini API key is missing. Please check your Vercel Environment Variables.";
+    if (!process.env.API_KEY) return "The Gemini API key is missing from the environment variables.";
 
     try {
       const ai = this.getClient();
@@ -71,15 +73,16 @@ export class GeminiService {
         contents,
         config: {
           systemInstruction: SYSTEM_PROMPTS[mode],
-          temperature: mode === ChatMode.CRISIS ? 0.2 : 0.8,
+          temperature: mode === ChatMode.CRISIS ? 0.1 : 0.8,
+          // Reserve thinking tokens for high-quality emotional reasoning
           thinkingConfig: { thinkingBudget: 4000 }
         },
       });
 
-      return response.text || "I'm listening...";
+      return response.text || "I'm listening closely...";
     } catch (error) {
-      console.error("Gemini API error:", error);
-      return "I'm having a little trouble connecting to my thoughts right now, but I'm still here with you.";
+      console.error("Gemini connection error:", error);
+      return "I'm having a quiet moment to myself (connection issue), but I'm still right here for you.";
     }
   }
 }
