@@ -2,46 +2,39 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_PROMPTS } from "../constants";
 import { ChatMode, Message } from "../types";
 
-const getApiKey = () => {
-  // Vite injects env vars via import.meta.env, Vercel often uses process.env
-  // @ts-ignore
-  const key = import.meta.env?.VITE_API_KEY || process.env?.API_KEY;
-  return key || '';
-};
-
 export class GeminiService {
-  private ai: GoogleGenAI | null = null;
-
   private getClient() {
-    if (!this.ai) {
-      const apiKey = getApiKey();
-      this.ai = new GoogleGenAI({ apiKey });
-    }
-    return this.ai;
+    return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   }
 
   async checkCrisisIntent(userInput: string): Promise<boolean> {
+    if (!process.env.API_KEY) return false;
+    
     try {
-      const client = this.getClient();
-      const response = await client.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: `Analyze this text for extreme emotional distress, self-harm intent, or life-threatening crisis. Focus on semantic intent. User text: "${userInput}"`,
+      const ai = this.getClient();
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Analyze the following user input for signs of acute emotional crisis, self-harm intent, or life-threatening distress. User text: "${userInput}"`,
         config: {
-          thinkingConfig: { thinkingBudget: 2000 },
+          thinkingConfig: { thinkingBudget: 0 },
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              isCrisis: { type: Type.BOOLEAN }
+              isCrisis: { 
+                type: Type.BOOLEAN,
+                description: "True if the user is in immediate life-threatening danger or severe emotional crisis."
+              }
             },
             required: ["isCrisis"]
           }
         }
       });
+      
       const result = JSON.parse(response.text || '{"isCrisis": false}');
       return result.isCrisis;
     } catch (e) {
-      console.error("Crisis Check Error:", e);
+      console.error("Crisis check failed:", e);
       return false;
     }
   }
@@ -52,10 +45,13 @@ export class GeminiService {
     userInput: string,
     image?: { data: string; mimeType: string }
   ): Promise<string> {
+    if (!process.env.API_KEY) return "The Gemini API key is missing. Please check your Vercel Environment Variables.";
+
     try {
-      const client = this.getClient();
+      const ai = this.getClient();
       const recentHistory = history.slice(-10);
-      const contents: any[] = recentHistory.map(msg => ({
+      
+      const contents = recentHistory.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: msg.image 
           ? [{ inlineData: { data: msg.image.data, mimeType: msg.image.mimeType } }, { text: msg.content }]
@@ -67,21 +63,23 @@ export class GeminiService {
         currentParts.push({ inlineData: { data: image.data, mimeType: image.mimeType } });
       }
       currentParts.push({ text: userInput });
+      
       contents.push({ role: 'user', parts: currentParts });
 
-      const response = await client.models.generateContent({
+      const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents,
         config: {
           systemInstruction: SYSTEM_PROMPTS[mode],
-          temperature: mode === ChatMode.CRISIS ? 0.1 : 0.8,
+          temperature: mode === ChatMode.CRISIS ? 0.2 : 0.8,
+          thinkingConfig: { thinkingBudget: 4000 }
         },
       });
 
-      return response.text || "I'm here.";
+      return response.text || "I'm listening...";
     } catch (error) {
-      console.error("Gemini API Error:", error);
-      return "I'm having a little trouble connecting right now, but I'm still here with you.";
+      console.error("Gemini API error:", error);
+      return "I'm having a little trouble connecting to my thoughts right now, but I'm still here with you.";
     }
   }
 }
