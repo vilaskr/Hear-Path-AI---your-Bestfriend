@@ -2,20 +2,19 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_PROMPTS } from "../constants";
 import { ChatMode, Message } from "../types";
 
-const getEnv = (key: string) => {
-  if (typeof process !== 'undefined' && process.env && process.env[key]) return process.env[key];
+const getApiKey = () => {
+  // Try different ways to find the API Key depending on environment
+  if (typeof process !== 'undefined' && process.env?.API_KEY) return process.env.API_KEY;
   // @ts-ignore
-  if (import.meta.env && import.meta.env[`VITE_${key}`]) return import.meta.env[`VITE_${key}`];
-  return null;
+  if (import.meta.env?.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
+  return '';
 };
 
 export class GeminiService {
   private ai: GoogleGenAI;
 
   constructor() {
-    const apiKey = getEnv('API_KEY');
-    // Ensure we always have an instance, even if the key is missing initially
-    this.ai = new GoogleGenAI({ apiKey: apiKey || '' });
+    this.ai = new GoogleGenAI({ apiKey: getApiKey() });
   }
 
   async checkCrisisIntent(userInput: string): Promise<boolean> {

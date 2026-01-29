@@ -68,8 +68,8 @@
       }
     </style>
     <script>
-      // Global polyfill to prevent crashes in libraries expecting Node.js environment
-      window.process = window.process || { env: {} };
+      // Global safety polyfill
+      window.process = { env: {} };
     </script>
   <script type="importmap">
 {
